@@ -711,9 +711,11 @@ load_prop_values <-
 load_prop_values_pc <- function(stac_path = "https://planetarycomputer.microsoft.com/api/stac/v1/",
           collections = c("io-lulc-9-class"), srs.cube = "EPSG:6623",
           t0 = "2000-01-01", t1 = "2001-12-31", spatial.res = 250,
-          bbox = NULL, limit = 5000, prop = F, prop.res = 1000, select_values = NULL,
+          bbox = NULL, limit = 1000, prop = F, prop.res = 1000, select_values = NULL,
           temporal.res = "P1Y") {
 s <- rstac::stac(stac_path)
+limit <- min(1000, limit)
+
 left <- bbox$xmin
 right <- bbox$xmax
 bottom <- bbox$ymin
@@ -748,11 +750,7 @@ if (is.null(spatial.res)) {
   }))[1]
   spatial.res <- it_obj$features[[1]]$assets[[name1]]$`raster:bands`[[1]]$spatial_resolution
 }
-if (is.null(layers)) {
-  layers <- unlist(lapply(it_obj$features, function(x) {
-    names(x$assets)
-  }))
-}
+
 v <- gdalcubes::cube_view(srs = srs.cube, extent = list(t0 = t0,
                                                         t1 = t1, left = left, right = right, top = top, bottom = bottom),
                           dx = spatial.res, dy = spatial.res, dt = temporal.res,
