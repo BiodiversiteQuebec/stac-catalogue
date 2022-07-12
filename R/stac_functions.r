@@ -704,7 +704,8 @@ load_prop_values <-
     return(cube_class_rstack)
   }
 
-
+#' @name load_prop_values_pc
+#' @export
 load_prop_values_pc <- function(stac_path = "https://planetarycomputer.microsoft.com/api/stac/v1/",
           collections = c("io-lulc-9-class"), srs.cube = "EPSG:6623",
           t0 = "2000-01-01", t1 = "2001-12-31", spatial.res = 250,
