@@ -690,7 +690,9 @@ load_prop_values <-
           cube_class <- cube_class %>%
             stars::st_as_stars() %>%
             as("Raster")
+          if (raster::nlayers(cube_class) > 1) {
           cube_class <- raster::calc(cube_class, sum, na.rm = T)
+        }
         }
        
         
