@@ -703,3 +703,77 @@ load_prop_values <-
     
     return(cube_class_rstack)
   }
+
+
+load_prop_values_pc <- function(stac_path = "https://planetarycomputer.microsoft.com/api/stac/v1/",
+          collections = c("io-lulc-9-class"), srs.cube = "EPSG:6623",
+          t0 = "2000-01-01", t1 = "2001-12-31", spatial.res = 250,
+          bbox = NULL, limit = 5000, prop = F, prop.res = 1000, select_values = NULL,
+          temporal.res = "P1Y") {
+s <- rstac::stac(stac_path)
+left <- bbox$xmin
+right <- bbox$xmax
+bottom <- bbox$ymin
+top <- bbox$ymax
+if (left > right) {
+  stop("left and right seem reversed")
+}
+if (bottom > top) {
+  stop("bottom and top seem reversed")
+}
+bbox.wgs84 <- bbox %>% sf::st_bbox(crs = srs.cube) %>% sf::st_as_sfc() %>%
+  sf::st_transform(crs = "EPSG:4326") %>% sf::st_bbox()
+if (!is.null(t0)) {
+  datetime <- format(lubridate::as_datetime(t0), "%Y-%m-%dT%H:%M:%SZ")
+} else {
+  it_obj_tmp <- s %>% rstac::stac_search(bbox = bbox.wgs84,
+                                         collections = collections, limit = limit) %>% rstac::get_request()
+  datetime <- it_obj_tmp$features[[1]]$properties$datetime
+  t0 <- datetime
+  t1 <- datetime
+}
+if (!is.null(t1) && t1 != t0) {
+  datetime <- paste(datetime, format(lubridate::as_datetime(t1),
+                                     "%Y-%m-%dT%H:%M:%SZ"), sep = "/")
+}
+RCurl::url.exists(stac_path)
+it_obj <- s %>% rstac::stac_search(bbox = bbox.wgs84, collections = collections,
+                                   datetime = datetime, limit = limit) %>% rstac::get_request()
+if (is.null(spatial.res)) {
+  name1 <- unlist(lapply(it_obj$features, function(x) {
+    names(x$assets)
+  }))[1]
+  spatial.res <- it_obj$features[[1]]$assets[[name1]]$`raster:bands`[[1]]$spatial_resolution
+}
+if (is.null(layers)) {
+  layers <- unlist(lapply(it_obj$features, function(x) {
+    names(x$assets)
+  }))
+}
+v <- gdalcubes::cube_view(srs = srs.cube, extent = list(t0 = t0,
+                                                        t1 = t1, left = left, right = right, top = top, bottom = bottom),
+                          dx = spatial.res, dy = spatial.res, dt = temporal.res,
+                          aggregation = "mode", resampling = "near")
+gdalcubes::gdalcubes_options(parallel = T)
+cube_class_rstack <- raster::stack()
+for (i in 1:length(unique(select_values))) {
+    st <- gdalcubes::stac_image_collection(it_obj$features,
+                                             asset_names = "data")
+    cube_class <- gdalcubes::raster_cube(st, v, mask = image_mask(band = "data",
+                                                                  values = select_values[i], invert = T))
+    if (prop) {
+      cube_class <- cube_class %>% gdalcubes::aggregate_space(dx = prop.res,
+                                                              dy = prop.res, method = "count") %>%
+        stars::st_as_stars() %>% as("Raster")
+      cube_class <- cube_class/((prop.res/spatial.res)^2)
+    }
+    else {
+      cube_class <- cube_class %>% stars::st_as_stars() %>%
+        as("Raster")
+    }
+    names(cube_class) <- paste0("class", select_values[i])
+    cube_class_rstack <- raster::stack(cube_class_rstack,
+                                       cube_class)
+}
+return(cube_class_rstack)
+}
