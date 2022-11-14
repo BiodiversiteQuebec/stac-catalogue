@@ -124,21 +124,12 @@ shp_to_bbox <- function(shp,
 #' @param limit, an integer defining the maximum number of results to return.
 #' @param collections, a character vector of collection IDs to include
 #' subsetLayers, a vector, containing the name of layers to select. If NULL, all layers in dir.pred selected by default.
-#' @param use.obs, a boolean. If TRUE, the provided observations will be sued as a basis for calculating the extent and bbox.
-#' @param obs, a data.frame containg the observations (used if use.obs is T)
-#' @param srs.obs, string, observations spatial reference system. Can be a proj4 definition, WKT, or in the form "EPSG:XXXX".
-#' @param lon, a string, column from obs containing longitude
-#' @param lat, a string, column from obs containing latitude
-#' @param buffer.box, an integer, buffer to apply around the obs to calculate extent and bbox
-#' @param bbox, a numeric vector of size 4 or 6. Coordinates of the bounding box (if use.obs is FALSE). Details in rstac::stac_search documentation.
-#' @param layers, a string vector, names of bands to be used,. By default (NULL), all bands with "eo:bands" attributes will be used.
+#' @param bbox, a numeric vector,  coordinates of the extent in the order xmin, ymin, xmax, ymax
+#' @param layers, a string vector, names of layers to be used. By default (NULL), all bands with "eo:bands" attributes will be used.
+#' @param variables, a string vector, names of variables to be used. 
 #' @param srs.cube, string, target spatial reference system. Can be a proj4 definition, WKT, or in the form "EPSG:XXXX".
 #' @param t0, ISO8601 datetime string, start date.
 #' @param t1, ISO8601 datetime string, end date.
-#' @param left, a float. Left coordinate of the extent. Used if use.obs = F
-#' @param right, a float. Right coordinate of the extent. Used if use.obs = F
-#' @param top, a float. Top coordinate of the extent. Used if use.obs = F
-#' @param bottom, a float. Bottom coordinate of the extent. Used if use.obs = F
 #' @param spatial.res, a float, size of pixels in longitude and latitude directions, in the unit of srs.cube spatial reference system.
 #' @param temporal.res, size of pixels in time-direction, expressed as ISO8601 period string (only 1 number and unit is allowed) such as "P16D"
 #' @param aggregation, a character, aggregation method as string, defining how to deal with pixels containing data from multiple images, can be "min", "max", "mean", "median", or "first"
@@ -147,6 +138,7 @@ shp_to_bbox <- function(shp,
 #' @import gdalcubes dplyr sp sf rstac
 #' @return a proxy raster data cube
 #' @export
+
 load_cube <-
   function(stac_path = "https://io.biodiversite-quebec.ca/stac/",
            limit = NULL,
@@ -162,37 +154,28 @@ load_cube <-
            temporal.res = "P1Y",
            aggregation = "mean",
            resampling = "near") {
-    
     s <- rstac::stac(stac_path)
-   
-    if(!inherits(bbox, "bbox")) stop("The bbox is not a bbox object.")
-    
-      left <- bbox$xmin
-      right <- bbox$xmax
-      bottom <- bbox$ymin
-      top <- bbox$ymax
-      
-      if (left > right) {
-        stop("left and right seem reversed")
-      }
-      if (bottom > top) {
-        stop("bottom and top seem reversed")
-      }
-      
-      # Create the bbxo (WGS84 projection)
-      bbox.wgs84 <- bbox %>% sf::st_bbox(crs = srs.cube) %>% 
-        sf::st_as_sfc() %>% sf::st_transform(crs = "EPSG:4326") %>% 
-        sf::st_bbox()
-   
-    
+    if (!inherits(bbox, "bbox"))
+      stop("The bbox is not a bbox object.")
+    left <- bbox$xmin
+    right <- bbox$xmax
+    bottom <- bbox$ymin
+    top <- bbox$ymax
+    if (left > right) {
+      stop("left and right seem reversed")
+    }
+    if (bottom > top) {
+      stop("bottom and top seem reversed")
+    }
+    bbox.wgs84 <-
+      bbox %>% sf::st_bbox(crs = srs.cube) %>% sf::st_as_sfc() %>%
+      sf::st_transform(crs = "EPSG:4326") %>% sf::st_bbox()
     if (!is.null(t0)) {
       datetime <- format(lubridate::as_datetime(t0), "%Y-%m-%dT%H:%M:%SZ")
     } else {
-      it_obj_tmp <- s %>%
-        rstac::stac_search(bbox = bbox.wgs84,
-                           collections = collections,
-                           limit = limit) %>%
-        rstac::get_request()
+      it_obj_tmp <- s %>% rstac::stac_search(bbox = bbox.wgs84,
+                                             collections = collections,
+                                             limit = limit) %>% rstac::get_request()
       datetime <- it_obj_tmp$features[[1]]$properties$datetime
       t0 <- datetime
       t1 <- datetime
@@ -202,14 +185,17 @@ load_cube <-
                         format(lubridate::as_datetime(t1),
                                "%Y-%m-%dT%H:%M:%SZ"),
                         sep = "/")
+    } else {
+      t1 <- t0
     }
     RCurl::url.exists(stac_path)
-    it_obj <- s %>%
-      rstac::stac_search(bbox = bbox.wgs84,
-                         collections = collections,
-                         datetime = datetime,
-                         limit = limit) %>%
-      rstac::get_request()
+    it_obj <-
+      s %>% rstac::stac_search(
+        bbox = bbox.wgs84,
+        collections = collections,
+        datetime = datetime,
+        limit = limit
+      ) %>% rstac::get_request()
     if (is.null(spatial.res)) {
       name1 <- unlist(lapply(it_obj$features, function(x) {
         names(x$assets)
@@ -251,10 +237,10 @@ load_cube <-
       resampling = resampling
     )
     gdalcubes::gdalcubes_options(parallel = T)
-    
     cube <- gdalcubes::raster_cube(st, v, mask)
     return(cube)
   }
+
 
 
 #' Create a proxy data cube for future climate,
