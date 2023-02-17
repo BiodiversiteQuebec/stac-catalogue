@@ -126,7 +126,8 @@ shp_to_bbox <- function(shp,
 #' subsetLayers, a vector, containing the name of layers to select. If NULL, all layers in dir.pred selected by default.
 #' @param bbox, a numeric vector,  coordinates of the extent in the order xmin, ymin, xmax, ymax
 #' @param layers, a string vector, names of layers to be used. By default (NULL), all bands with "eo:bands" attributes will be used.
-#' @param variables, a string vector, names of variables to be used. 
+#' @param variables, a string vector, names of variables to be used when the items have variables names in properties. 
+#' @param ids, ids of the items to select from.
 #' @param srs.cube, string, target spatial reference system. Can be a proj4 definition, WKT, or in the form "EPSG:XXXX".
 #' @param t0, ISO8601 datetime string, start date.
 #' @param t1, ISO8601 datetime string, end date.
@@ -146,6 +147,7 @@ load_cube <-
            bbox = NULL,
            layers = NULL,
            variable = NULL,
+           ids = NULL,
            mask = NULL,
            srs.cube = "EPSG:6623",
            t0 = NULL,
@@ -207,6 +209,11 @@ load_cube <-
       layers <- unlist(lapply(it_obj$features, function(x) {
         names(x$assets)
       }))
+    }
+    if (!is.null(ids)) {
+      feats<-it_obj$features[lapply(it_obj$features,function(f){f$id %in% ids})==TRUE]
+    }else{
+      feats<-it_obj$features
     }
     if (!is.null(variable)) {
       st <- gdalcubes::stac_image_collection(
@@ -541,6 +548,8 @@ get_info_collection <- function(stac_path =
 #' @param prop, a boolean. If TRUE, the proportion of each classes from selected_values is calculated. If FALSE, only the values in selected_values are retrieved.
 #' @param prop.res, an integer, resolution to calculate the proportion of land cover classes (if prop is TRUE)
 #' @param selected_values, a vector, classes values to select.
+#' @param variable, for items that have variables set in the description, select on the variable names.
+#' @param ids, ids of the items to select from.
 #' @return a raster stack of variables not intercorrelated
 #' @import gdalcubes dplyr sp sf rstac
 #' @return a proxy raster data cube
@@ -559,6 +568,7 @@ load_prop_values <-
            select_values = NULL,
            layers = NULL,
            variable = NULL,
+           ids = NULL,
            temporal.res = "P1Y") {
     s <- rstac::stac(stac_path)
 
@@ -641,6 +651,11 @@ load_prop_values <-
     
     for (i in 1:length(unique(select_values))) {
       for (j in 1:length(layers)) {
+        if (!is.null(ids)) {
+          feats<-it_obj$features[lapply(it_obj$features,function(f){f$id %in% ids})==TRUE]
+        }else{
+          feats<-it_obj$features
+        }
         if (!is.null(variable)) {
           st <- gdalcubes::stac_image_collection(
             it_obj$features,
