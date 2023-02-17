@@ -127,7 +127,7 @@ shp_to_bbox <- function(shp,
 #' @param bbox, a numeric vector,  coordinates of the extent in the order xmin, ymin, xmax, ymax
 #' @param layers, a string vector, names of layers to be used. By default (NULL), all bands with "eo:bands" attributes will be used.
 #' @param variables, a string vector, names of variables to be used when the items have variables names in properties. 
-#' @param ids, ids of the items to select from.
+#' @param ids, a string vector, ids of the items to select.
 #' @param srs.cube, string, target spatial reference system. Can be a proj4 definition, WKT, or in the form "EPSG:XXXX".
 #' @param t0, ISO8601 datetime string, start date.
 #' @param t1, ISO8601 datetime string, end date.
@@ -217,14 +217,14 @@ load_cube <-
     }
     if (!is.null(variable)) {
       st <- gdalcubes::stac_image_collection(
-        it_obj$features,
+        feats,
         asset_names = layers,
         property_filter = function(x) {
           x[["variable"]] %in% variable
         }
       )
     } else {
-      st <- gdalcubes::stac_image_collection(it_obj$features,
+      st <- gdalcubes::stac_image_collection(feats ,
                                              asset_names = layers)
     }
     v <- gdalcubes::cube_view(
