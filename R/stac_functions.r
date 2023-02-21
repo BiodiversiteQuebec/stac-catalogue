@@ -212,10 +212,11 @@ load_cube <-
     }
     if (!is.null(ids)) {
       feats<-it_obj$features[lapply(it_obj$features,function(f){f$id %in% ids})==TRUE]
+      print("IDs not null")
     }else{
       feats<-it_obj$features
     }
-    print(feats)
+    print(ids)
     if (!is.null(variable)) {
       st <- gdalcubes::stac_image_collection(
         feats,
