@@ -215,10 +215,7 @@ load_cube <-
     }else{
       feats<-it_obj$features
     }
-    print(paste0('ids:',ids))
-    print(paste0('Datetime:',datetime))
-    print(paste0('Var:',variable))
-    print(paste0('Layers:',layers))
+    print(feats)
     if (!is.null(variable)) {
       st <- gdalcubes::stac_image_collection(
         feats,
