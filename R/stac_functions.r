@@ -354,6 +354,11 @@ load_cube_projection <- function(stac_path =
     }))
   }
   
+  # Force each dataset to have the data role. Fix 08/2023
+  for (i in 1:length(it_obj$features)){
+    it_obj$features[[i]]$assets$data$roles<-'data'
+  }
+  
   #
   # Creates an image collection
   if (!is.null(variable)) {
