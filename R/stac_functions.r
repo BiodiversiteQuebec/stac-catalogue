@@ -199,10 +199,10 @@ load_cube <-
         limit = limit
       ) %>% rstac::get_request()
   # Force each dataset to have the data role. Fix 08/2023
-  for (i in 1:length(it_obj$features)){
-    it_obj$features[[i]]$assets$data$roles<-'data'
-  }
-  
+    for (i in 1:length(it_obj$features)){
+        it_obj$features[[i]]$assets[[1]]$roles<-'data'
+    }
+    
 
     if (is.null(spatial.res)) {
       name1 <- unlist(lapply(it_obj$features, function(x) {
@@ -361,9 +361,10 @@ load_cube_projection <- function(stac_path =
   }
   
   # Force each dataset to have the data role. Fix 08/2023
-  for (i in 1:length(it_obj$features)){
-    it_obj$features[[i]]$assets$data$roles<-'data'
-  }
+    for (i in 1:length(it_obj$features)){
+        it_obj$features[[i]]$assets[[1]]$roles<-'data'
+    }
+    
   
   #
   # Creates an image collection
@@ -500,10 +501,10 @@ get_info_collection <- function(stac_path =
                        limit = limit) %>% rstac::get_request()
 
     # Force each dataset to have the data role. Fix 08/2023
-  for (i in 1:length(it_obj$features)){
-    it_obj$features[[i]]$assets$data$roles<-'data'
-  }
-  
+    for (i in 1:length(it_obj$features)){
+        it_obj$features[[i]]$assets[[1]]$roles<-'data'
+    }
+    
   layers <- unlist(lapply(it_obj$features, function(x) {
     names(x$assets)
   }))
@@ -766,9 +767,10 @@ it_obj <- s %>% rstac::stac_search(bbox = bbox.wgs84, collections = collections,
                                    datetime = datetime, limit = limit) %>% rstac::get_request()
 
   # Force each dataset to have the data role. Fix 08/2023
-  for (i in 1:length(it_obj$features)){
-    it_obj$features[[i]]$assets$data$roles<-'data'
-  }
+    for (i in 1:length(it_obj$features)){
+        it_obj$features[[i]]$assets[[1]]$roles<-'data'
+    }
+    
   
 if (is.null(spatial.res)) {
   name1 <- unlist(lapply(it_obj$features, function(x) {
