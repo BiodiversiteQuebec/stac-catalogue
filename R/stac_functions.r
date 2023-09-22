@@ -198,6 +198,12 @@ load_cube <-
         datetime = datetime,
         limit = limit
       ) %>% rstac::get_request()
+  # Force each dataset to have the data role. Fix 08/2023
+  for (i in 1:length(it_obj$features)){
+    it_obj$features[[i]]$assets$data$roles<-'data'
+  }
+  
+
     if (is.null(spatial.res)) {
       name1 <- unlist(lapply(it_obj$features, function(x) {
         names(x$assets)
@@ -492,6 +498,11 @@ get_info_collection <- function(stac_path =
     rstac::stac_search(bbox = bbox,
                        collections = collections,
                        limit = limit) %>% rstac::get_request()
+
+    # Force each dataset to have the data role. Fix 08/2023
+  for (i in 1:length(it_obj$features)){
+    it_obj$features[[i]]$assets$data$roles<-'data'
+  }
   
   layers <- unlist(lapply(it_obj$features, function(x) {
     names(x$assets)
@@ -753,6 +764,12 @@ if (!is.null(t1) && t1 != t0) {
 RCurl::url.exists(stac_path)
 it_obj <- s %>% rstac::stac_search(bbox = bbox.wgs84, collections = collections,
                                    datetime = datetime, limit = limit) %>% rstac::get_request()
+
+  # Force each dataset to have the data role. Fix 08/2023
+  for (i in 1:length(it_obj$features)){
+    it_obj$features[[i]]$assets$data$roles<-'data'
+  }
+  
 if (is.null(spatial.res)) {
   name1 <- unlist(lapply(it_obj$features, function(x) {
     names(x$assets)
